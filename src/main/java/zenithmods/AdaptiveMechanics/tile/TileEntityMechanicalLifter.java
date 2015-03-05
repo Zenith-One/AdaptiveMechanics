@@ -7,17 +7,31 @@ import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineTransmitter;
 public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveMachineTransmitter {
 
     public static final int MAX_EXTENDED_TICKS = 10;
-    public static final int MAX_DROP_TICKS = 7;
+    public static final int MAX_DROP_TICKS = 5;
     public static final int MAX_LIFT_TIME = 90;
+    public static final int MAX_DROP_WAIT = MAX_DROP_TICKS * 2;
 
-    private int rotationTicks = 0;
+    private final int EXTEND_START = 90;
+    private final int DROP_START = 100;
+    private final int RETRACT_START = 110;
+    private final int RESET = 120;
+
+    private int workingTicks = 0;
+    private int passesInQueue = 0;
+    private int remainder = 0;
+
+    private boolean initialized = false;
+    private int inputRotationTicks = 0;
+
     private int gearRotationTicks = 0;
-    private int ticksToExtend = MAX_LIFT_TIME;
-    private boolean extended = false;
-    private boolean extending = false;
-    private int dropTicks = 0;
-    private boolean dropping = false;
+
     private int extendedTicks = 0;
+
+    private boolean dropping = false;
+    private int dropTicks = 0;
+
+    private boolean shouldReport = false;
+    private boolean hasReported = false;
 
     private int gearBarOffset = 0;
 
@@ -28,11 +42,24 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
         if (hasInputBelow()){
             IAdaptiveMachineTransmitter iamt = (IAdaptiveMachineTransmitter) getTileEntityBelow();
             if (iamt.canOutputToSide(ForgeDirection.UP)){
-                this.rotationTicks = iamt.getOutputRotationAngle();
-                checkDroppingTicks();
-                checkGearTicks();
-                checkGearExtensionTicks();
+                this.inputRotationTicks = iamt.getOutputRotationAngle();
+                if (!initialized){
+                    this.lastInputRotation = inputRotationTicks;
+                    initialized = true;
+                }
+                checkProgress();
+                while (passesInQueue > 0){
+                    checkDroppingTicks();
+                    checkGearTicks();
+                    checkGearExtensionTicks();
+                    passesInQueue--;
+                }
             }
+        }
+        if (shouldReport && !hasReported){
+            printStuff();
+            hasReported = true;
+            shouldReport = false;
         }
     }
 
@@ -50,38 +77,50 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
         return te instanceof IAdaptiveMachineTransmitter;
     }
 
+    private boolean checkProgress(){
+        if (this.inputRotationTicks != this.lastInputRotation){
+            int diff = inputRotationTicks > lastInputRotation ?
+                    inputRotationTicks - lastInputRotation :
+                    360+ inputRotationTicks - lastInputRotation;
+            diff += remainder;
+
+            passesInQueue = diff / 2;
+            remainder = diff % passesInQueue;
+
+            this.lastInputRotation = this.inputRotationTicks;
+            this.hasReported = false;
+            return diff > 0;
+        } else {
+            if (!this.hasReported){
+                //this.shouldReport = true;
+            }
+        }
+        return false;
+    }
+
     private void checkGearTicks(){
-        if (this.rotationTicks != this.lastInputRotation){
-            this.lastInputRotation = this.rotationTicks;
-            if (!this.extended && this.rotationTicks % 2 == 0){
-                if (this.gearRotationTicks < 360){
-                    this.gearRotationTicks++;
-                    this.ticksToExtend--;
-                    this.gearBarOffset++;
-                } else {
-                    this.gearRotationTicks = 0;
-                }
+        workingTicks++;
+        if (workingTicks < EXTEND_START){
+            if (this.gearRotationTicks < 360){
+                this.gearRotationTicks++;
+                this.gearBarOffset++;
+            } else {
+                this.gearRotationTicks = 0;
             }
         }
     }
 
     private void checkGearExtensionTicks(){
-        if (!this.extended && ticksToExtend <= 0){
-            this.extended = true;
-            this.extending = true;
-        } else {
-           if (this.extendedTicks <= MAX_EXTENDED_TICKS) {
-               if (this.extending){
-                   this.extendedTicks++;
-                   if (this.extendedTicks >= MAX_EXTENDED_TICKS){
-                       this.extending = false;
-                       this.dropping = true;
-                   }
-               } else if (!this.dropping && this.extended){
-                   this.extendedTicks--;
-                   if (this.extendedTicks <= 0){
-                       this.extended = false;
-                   }
+        if (workingTicks > EXTEND_START){
+           if ( workingTicks <= DROP_START) {
+               this.extendedTicks++;
+           } else if (workingTicks == DROP_START + 1){
+               dropping = true;
+           } else if (workingTicks > RETRACT_START){
+               this.extendedTicks--;
+               if (this.extendedTicks <= 0){
+                   clientPrint(workingTicks + "");
+                   workingTicks = 0;
                }
            }
         }
@@ -91,15 +130,10 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
         if (this.dropping && this.dropTicks < MAX_DROP_TICKS ){
             dropTicks++;
             double gearBarPercent = 1.0D - (float) dropTicks / (float) MAX_DROP_TICKS;
-            clientPrint("gearBarPercent: " + gearBarPercent);
             gearBarOffset = (int) ( gearBarPercent * (double) gearBarOffset);
-            clientPrint("gearBarOffset: " + gearBarOffset);
-            clientPrint("dropTicks: " + dropTicks);
             if (this.dropTicks >= MAX_DROP_TICKS){
                 this.dropTicks = 0;
-                ticksToExtend = MAX_LIFT_TIME;
                 this.dropping = false;
-                clientPrint("unextending");
             }
         }
     }
@@ -108,16 +142,12 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
         return gearBarOffset;
     }
 
-    public int getRotationTicks(){
-        return rotationTicks;
+    public int getInputRotationTicks(){
+        return inputRotationTicks;
     }
 
     public int getGearRotationTicks(){
         return gearRotationTicks;
-    }
-
-    public int getTicksToExtend(){
-        return ticksToExtend;
     }
 
     public boolean isDropping(){
@@ -147,12 +177,12 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
 
     @Override
     public int getOutputRotationAngle() {
-        return this.getRotationTicks();
+        return this.getInputRotationTicks();
     }
 
     @Override
     public float getOutputRotationAnglef() {
-        return (float) (this.getRotationTicks() / 360F * 2 * (float)Math.PI);
+        return (float) (this.getInputRotationTicks() / 360F * 2 * (float)Math.PI);
     }
 
     public float getGearRotationAnglef() {
@@ -175,17 +205,15 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
     }
 
     public void printStuff(){
-        clientPrint("rotationTicks: " + rotationTicks);
-        clientPrint("extendedTicks: " + extendedTicks + " extended:" + extended + ", extending:" + extending);
-        clientPrint("dropping: " + dropping + ", dropTicks: " + dropTicks + ", ticksToExtend: " + ticksToExtend );
+        clientPrint("workingTicks: " + workingTicks);
+        clientPrint("inputRotationTicks: " + inputRotationTicks);
+        clientPrint("extendedTicks: " + extendedTicks);
+        clientPrint("dropping: " + dropping + ", dropTicks: " + dropTicks);
+        clientPrint("gearBarOffset: " + gearBarOffset);
     }
 
     public int getDropTicks() {
         return dropTicks;
-    }
-
-    public boolean isExtended() {
-        return extended;
     }
 
     public boolean needsInputRotation(){

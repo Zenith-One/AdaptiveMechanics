@@ -15,10 +15,6 @@ public class AABBHelper {
     }
 
 
-
-
-
-
     public static class AABBTuple{
         private float xMin;
         private float xMax;

@@ -1,5 +1,6 @@
 package zenithmods.AdaptiveMechanics.blocks;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -11,8 +12,11 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import zenithmods.AdaptiveMechanics.AdaptiveMechanics;
 import zenithmods.AdaptiveMechanics.api.block.BlockAdaptiveMachine;
+import zenithmods.AdaptiveMechanics.api.block.IBlockAdaptiveMachineReceiver;
+import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineReceiver;
 import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineTransmitter;
 import zenithmods.AdaptiveMechanics.lib.Constants;
+import zenithmods.AdaptiveMechanics.render.AMRenderingRegister;
 import zenithmods.AdaptiveMechanics.tile.TileEntityCrank;
 
 import static zenithmods.AdaptiveMechanics.utility.AABBHelper.*;
@@ -53,7 +57,7 @@ public class BlockCrank extends BlockAdaptiveMachine{
 
     @Override
     public int getRenderType() {
-        return -1;
+        return AMRenderingRegister.crankRenderID;
     }
 
     @Override
@@ -93,6 +97,26 @@ public class BlockCrank extends BlockAdaptiveMachine{
         return -1;
     }
 
+    /**
+     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
+     * their own) Args: x, y, z, neighbor Block
+     *
+     * @param world
+     * @param x
+     * @param y
+     * @param z
+     * @param block
+     */
+    @Override
+    public void onNeighborBlockChange(World world, int x, int y, int z, Block block) {
+        super.onNeighborBlockChange(world, x, y, z, block);
+        int currentMeta = world.getBlockMetadata(x, y, z);
+        if (getMetaFromSurrounding(world, x, y, z) != currentMeta ){
+            this.dropBlockAsItem(world, x, y, z, currentMeta, 0);
+            world.setBlockToAir(x, y, z);
+        }
+    }
+
     @Override
     public void onBlockPlacedBy(World world, int x, int y, int z, EntityLivingBase entity, ItemStack stack) {
         System.out.println("ahoy");
@@ -102,9 +126,6 @@ public class BlockCrank extends BlockAdaptiveMachine{
     @Override
     public boolean onBlockActivated(World par1World, int par2, int par3, int par4, EntityPlayer player, int par6, float par7, float par8, float par9) {
         TileEntityCrank tileEntityCrank = (TileEntityCrank) par1World.getTileEntity(par2, par3, par4);
-        if (tileEntityCrank.getWorldObj().isRemote){
-            System.out.println("Crank meta: " + tileEntityCrank.getBlockMetadata());
-        }
         tileEntityCrank.rightClicked();
         return true;
     }

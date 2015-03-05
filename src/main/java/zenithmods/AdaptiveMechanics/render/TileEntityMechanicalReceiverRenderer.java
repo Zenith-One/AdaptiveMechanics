@@ -2,6 +2,7 @@ package zenithmods.AdaptiveMechanics.render;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
@@ -10,6 +11,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import org.lwjgl.opengl.GL11;
+import zenithmods.AdaptiveMechanics.api.item.IItemGearbox;
 import zenithmods.AdaptiveMechanics.blocks.AMBlocks;
 import zenithmods.AdaptiveMechanics.lib.Constants;
 import zenithmods.AdaptiveMechanics.render.model.ModelCrankSocket;
@@ -19,7 +21,6 @@ import zenithmods.AdaptiveMechanics.tile.TileEntityMechanicalReceiver;
 public class TileEntityMechanicalReceiverRenderer extends TileEntitySpecialRenderer{
 
     private ModelMechanicalReceiver model;
-    private ModelCrankSocket crankSocketModel = new ModelCrankSocket();
     public static ResourceLocation texture = new ResourceLocation(Constants.MOD_ID + ":textures/models/MechanicalReceiver.png");
 
     public TileEntityMechanicalReceiverRenderer(ModelMechanicalReceiver model){
@@ -81,7 +82,12 @@ public class TileEntityMechanicalReceiverRenderer extends TileEntitySpecialRende
 
         // render the stationary bits
         this.model.render((Entity)null, 0.0F, 0.0F, -0.1F, 0.0F, 0.0F, 0.0625F);
-        this.crankSocketModel.render((Entity) null, 0.0f, 0.0f, -0.1f, 0.0f, 0.0f, 0.0625F);
+
+        IItemGearbox itemGearbox = tileEntityMechanicalReceiver.getGearbox();
+        if (itemGearbox != null){
+            ModelBase gearboxModel = itemGearbox.getGearboxModel();
+            gearboxModel.render((Entity) null, 0.0f, 0.0f, -0.1f, 0.0f, 0.0f, 0.0625F);
+        }
 
         // render the rotation of the linkage and the gearbox
         float rotationAngle = tileEntityMechanicalReceiver.getOutputRotationAnglef();

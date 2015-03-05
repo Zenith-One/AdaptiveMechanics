@@ -5,6 +5,8 @@ import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.MinecraftForgeClient;
 import zenithmods.AdaptiveMechanics.blocks.AMBlocks;
+import zenithmods.AdaptiveMechanics.items.AMItems;
+import zenithmods.AdaptiveMechanics.items.ItemGearboxCrankSocket;
 import zenithmods.AdaptiveMechanics.lib.Constants;
 import zenithmods.AdaptiveMechanics.render.AMItemRenderer;
 import zenithmods.AdaptiveMechanics.render.TileEntityCrankRenderer;
@@ -51,6 +53,11 @@ public class ClientProxy extends CommonProxy {
         MinecraftForgeClient.registerItemRenderer(
                 Item.getItemFromBlock(AMBlocks.crank),
                 new AMItemRenderer((AMModel) crankModel, TileEntityCrankRenderer.texture)
+        );
+
+        MinecraftForgeClient.registerItemRenderer(
+                AMItems.itemGearboxCrankSocket,
+                new AMItemRenderer((AMModel) ItemGearboxCrankSocket.crankSocketModel, TileEntityMechanicalReceiverRenderer.texture)
         );
 
     }

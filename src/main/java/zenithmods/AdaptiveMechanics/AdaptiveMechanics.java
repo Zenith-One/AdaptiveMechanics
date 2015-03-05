@@ -5,6 +5,8 @@ import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.network.FMLEventChannel;
+import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.creativetab.CreativeTabs;
@@ -19,6 +21,8 @@ import zenithmods.AdaptiveMechanics.tile.AMTiles;
 
 @Mod(modid = Constants.MOD_ID, name = Constants.MOD_NAME, version = Constants.VERSION)
 public class AdaptiveMechanics {
+
+    public static FMLEventChannel channel;
 
     public static CreativeTabs tab;
 
@@ -39,6 +43,8 @@ public class AdaptiveMechanics {
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event){
+
+        channel = NetworkRegistry.INSTANCE.newEventDrivenChannel(Constants.MOD_ID);
 
         AMRenderingRegister.init();
         proxy.registerRenderers();

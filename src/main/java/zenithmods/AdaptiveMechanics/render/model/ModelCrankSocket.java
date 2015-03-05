@@ -8,7 +8,7 @@ import net.minecraft.entity.Entity;
  * Actuator - zenith
  * Created using Tabula 4.1.1
  */
-public class ModelCrankSocket extends ModelBase {
+public class ModelCrankSocket extends ModelBase implements AMModel{
     public ModelRenderer CrankSocket;
 
     public ModelCrankSocket() {
@@ -19,9 +19,15 @@ public class ModelCrankSocket extends ModelBase {
         this.CrankSocket.addBox(0.0F, 0.0F, 0.0F, 2, 4, 4, 0.0F);
     }
 
+
     @Override
     public void render(Entity entity, float f, float f1, float f2, float f3, float f4, float f5) { 
         this.CrankSocket.render(f5);
+    }
+
+    @Override
+    public void renderAll(Entity entity, float f, float f1, float f2, float f3, float f4, float f5) {
+        render(entity, f, f1, f2, f3, f4,f5);
     }
 
     /**

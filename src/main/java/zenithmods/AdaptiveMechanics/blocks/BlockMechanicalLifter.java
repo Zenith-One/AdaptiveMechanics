@@ -13,6 +13,7 @@ import zenithmods.AdaptiveMechanics.AdaptiveMechanics;
 import zenithmods.AdaptiveMechanics.api.block.BlockAdaptiveMachine;
 import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineTransmitter;
 import zenithmods.AdaptiveMechanics.lib.Constants;
+import zenithmods.AdaptiveMechanics.render.AMRenderingRegister;
 import zenithmods.AdaptiveMechanics.tile.TileEntityMechanicalLifter;
 import zenithmods.AdaptiveMechanics.tile.TileEntityMechanicalReceiver;
 import zenithmods.AdaptiveMechanics.utility.BlockHelper;
@@ -33,6 +34,11 @@ public class BlockMechanicalLifter extends BlockAdaptiveMachine {
     }
 
     @Override
+    public boolean renderAsNormalBlock() {
+        return false;
+    }
+
+    @Override
     public boolean isOpaqueCube() {
         return false;
     }
@@ -44,7 +50,7 @@ public class BlockMechanicalLifter extends BlockAdaptiveMachine {
 
     @Override
     public int getRenderType() {
-        return -1;
+        return AMRenderingRegister.mechanicalLifterRenderID;
     }
 
     @Override
