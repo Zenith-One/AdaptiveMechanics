@@ -12,6 +12,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.MinecraftForge;
 import zenithmods.AdaptiveMechanics.blocks.AMBlocks;
 import zenithmods.AdaptiveMechanics.items.AMItems;
 import zenithmods.AdaptiveMechanics.lib.Constants;
@@ -53,6 +54,7 @@ public class AdaptiveMechanics {
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event){
+        MinecraftForge.EVENT_BUS.register(AMBlocks.mechanicalReceiver);
         System.out.println(Constants.MOD_NAME + " PostInitialization complete");
     }
 

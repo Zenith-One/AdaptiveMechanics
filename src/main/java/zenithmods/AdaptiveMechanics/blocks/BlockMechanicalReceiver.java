@@ -44,12 +44,18 @@ import java.util.Random;
 public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBlockAdaptiveMachineReceiver{
 
     public static final String NAME = "blockMechanicalReceiver";
+    private RayTracer rayTracer = new RayTracer();
 
     public BlockMechanicalReceiver(){
         super(Material.rock);
         setBlockName(Constants.MOD_ID + ":" + NAME);
         setCreativeTab(AdaptiveMechanics.tab);
    }
+
+    @Override
+    public boolean canRenderInPass(int pass) {
+        return pass == 0;
+    }
 
    @Override
     public TileEntity createNewTileEntity(World world, int meta) {
@@ -63,11 +69,6 @@ public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBl
 
     @Override
     public boolean isOpaqueCube() {
-        return false;
-    }
-
-    @Override
-    public boolean shouldSideBeRendered(IBlockAccess iba, int x, int y, int z, int meta){
         return false;
     }
 
@@ -145,28 +146,33 @@ public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBl
     @SubscribeEvent
     public void onBlockHighlight(DrawBlockHighlightEvent event) {
         Item equipped = event.player.getCurrentEquippedItem() != null ? event.player.getCurrentEquippedItem().getItem() : null;
-        System.out.println("onBlockHighlight event caught");
-        // do stuff here
-        //if (false){
-            RayTracer.retraceBlock(event.player.worldObj, event.player, event.target.blockX, event.target.blockY, event.target.blockZ);
-        //}
+        if (event.target.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK && event.player.worldObj.getBlock(event.target.blockX, event.target.blockY, event.target.blockZ) instanceof BlockMechanicalReceiver){
+            int x = event.target.blockX;
+            int y = event.target.blockY;
+            int z = event.target.blockZ;
+            TileEntity te = event.player.worldObj.getTileEntity(x, y, z);
+            if (te != null && te instanceof TileEntityMechanicalReceiver){
+                TileEntityMechanicalReceiver receiver = (TileEntityMechanicalReceiver) te;
+                if ( (receiver.hasGearbox() && equipped == null && event.player.isSneaking()) || (!receiver.hasGearbox() && equipped instanceof IItemGearbox)){
+                    RayTracer.retraceBlock(event.player.worldObj, event.player, event.target.blockX, event.target.blockY, event.target.blockZ);
+                }
+            }
+        }
     }
 
     @Override
     @SideOnly(Side.CLIENT)
     public MovingObjectPosition collisionRayTrace(World world, int x, int y, int z, Vec3 start, Vec3 end) {
-
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         Item equipped = player.getCurrentEquippedItem() != null ? player.getCurrentEquippedItem().getItem() : null;
         TileEntity tile = world.getTileEntity(x, y, z);
         if (tile instanceof TileEntityMechanicalReceiver){
             TileEntityMechanicalReceiver receiver = (TileEntityMechanicalReceiver) tile;
             boolean receiverHasGearbox = receiver.getGearbox() != null;
-            receiver.clientPrint("collisionRayTrace called");
 
             ItemStack stack = player.getCurrentEquippedItem();
             Item item = stack == null? null : stack.getItem();
-            receiver.clientPrint("valid tile: " + (tile != null) + "; ICustomRaytrace: " + (tile instanceof ICustomRaytrace) + "; valid player: " + (player != null) );
+            //receiver.clientPrint("valid tile: " + (tile != null) + "; ICustomRaytrace: " + (tile instanceof ICustomRaytrace) + "; valid player: " + (player != null) );
             String line2 = "Receiver has gearbox: " + receiverHasGearbox;
 
             if (!receiverHasGearbox){
@@ -176,22 +182,19 @@ public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBl
                 line2 += "; player has empty hand: " + (item == null);
             }
 
-            receiver.clientPrint(line2);
+            //receiver.clientPrint(line2);
 
 
-            if (tile != null && tile instanceof ICustomRaytrace && player != null &&
-                    ( (!receiverHasGearbox && item instanceof IItemGearbox) || (receiverHasGearbox && player.isSneaking() && item == null) )){
+            if ( (!receiverHasGearbox && item instanceof IItemGearbox) || (receiverHasGearbox && player.isSneaking() && item == null) ){
 
                 List<IndexedCuboid6> cuboids = ((ICustomRaytrace) tile).getTraceableCuboids();
                 if (cuboids != null){
-                    MovingObjectPosition mop = BlockHelper.rayTracer.rayTraceCuboids(new Vector3(start), new Vector3(end), cuboids, new BlockCoord(x, y, z), this);
-                    return mop;
-                } else {
-                    receiver.clientPrint("No cuboids!");
+                    return this.rayTracer.rayTraceCuboids(new Vector3(start), new Vector3(end), cuboids, new BlockCoord(x, y, z), this);
                 }
             }
 
         }
+        System.out.println("herp");
         return super.collisionRayTrace(world, x, y, z, start, end);
     }
 }

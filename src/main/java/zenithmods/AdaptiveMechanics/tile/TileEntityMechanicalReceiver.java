@@ -14,8 +14,10 @@ import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineReceiver;
 import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineTransmitter;
 import zenithmods.AdaptiveMechanics.api.tile.ICustomRaytrace;
 import zenithmods.AdaptiveMechanics.codechicken.lib.raytracer.IndexedCuboid6;
+import zenithmods.AdaptiveMechanics.codechicken.lib.vec.Cuboid6;
 import zenithmods.AdaptiveMechanics.utility.ItemHelper;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class TileEntityMechanicalReceiver extends TileEntity implements IAdaptiveMachineTransmitter, IAdaptiveMachineReceiver, ICustomRaytrace {
@@ -150,8 +152,47 @@ public class TileEntityMechanicalReceiver extends TileEntity implements IAdaptiv
     @Override
     public List<IndexedCuboid6> getTraceableCuboids() {
         int meta = this.getBlockMetadata();
-        clientPrint("meta: " + meta);
-        return null;
+        //clientPrint("meta: " + meta);
+
+        //public Cuboid6(double minx, double miny, double minz, double maxx, double maxy, double maxz) {
+        // y1 < 0.88f && y1 > 0.62f
+        LinkedList<IndexedCuboid6> cuboids = new LinkedList<IndexedCuboid6>();
+
+        double halfPixel = 1f / 32f;
+        double pixel = 2 * halfPixel;
+
+        double minX = this.xCoord;
+        double minY = this.yCoord + 0.621d;
+        double minZ = this.zCoord;
+        double maxX = this.xCoord;
+        double maxY = this.yCoord + 0.879d;
+        double maxZ = this.zCoord;
+        //cuboids.add(new IndexedCuboid6(0, new Cuboid6(this.xCoord + pixel, this.yCoord, this.zCoord + pixel, this.xCoord + 1 - pixel, this.yCoord + 1, this.zCoord + 1 - pixel)));
+
+        double mainMin = 0.0625f;
+        double mainMax = 0.9375f;
+        double sideMin = 0.33f;
+        double sideMax = 0.63f;
+
+
+        switch (meta){
+            case 2:
+            case 3:
+            case 4:
+
+                minX = this.xCoord + sideMin;
+                maxX = this.xCoord + sideMax;
+                minZ = this.zCoord + mainMax - halfPixel;
+                maxZ = this.zCoord + 1;
+                cuboids.add(new IndexedCuboid6(4, new Cuboid6(this.xCoord + sideMin, minY, this.zCoord + mainMax - pixel, this.xCoord + sideMax, maxY, this.zCoord + 1)));
+                break;
+            case 5:
+            default:
+                break;
+        }
+        //cuboids.add(new IndexedCuboid6(meta, new Cuboid6(minX, minY, minZ, maxX, maxY, maxZ )));
+
+        return cuboids;
     }
 
     public ItemStack installGearbox(ItemStack gearboxStack){
@@ -196,12 +237,16 @@ public class TileEntityMechanicalReceiver extends TileEntity implements IAdaptiv
         return null;
     }
 
+    public boolean hasGearbox(){
+        return inventoryGearbox[0] != null;
+    }
+
     public ItemStack getGearboxStack(){
         return inventoryGearbox[0];
     }
 
     public void clientPrint(String msg){
-        if (!worldObj.isRemote){
+        if (worldObj.isRemote){
             System.out.println(msg);
         }
     }
