@@ -165,32 +165,32 @@ public class TileEntityMechanicalReceiver extends TileEntity implements IAdaptiv
         double minY = this.yCoord + 0.621d;
         double minZ = this.zCoord;
         double maxX = this.xCoord;
-        double maxY = this.yCoord + 0.879d;
+        double maxY = this.yCoord + 0.85d;
         double maxZ = this.zCoord;
-        //cuboids.add(new IndexedCuboid6(0, new Cuboid6(this.xCoord + pixel, this.yCoord, this.zCoord + pixel, this.xCoord + 1 - pixel, this.yCoord + 1, this.zCoord + 1 - pixel)));
 
         double mainMin = 0.0625f;
         double mainMax = 0.9375f;
         double sideMin = 0.33f;
-        double sideMax = 0.63f;
+        double sideMax = 1 - sideMin;
 
 
         switch (meta){
             case 2:
+                cuboids.add(new IndexedCuboid6(4, new Cuboid6(this.xCoord + mainMin, minY, this.zCoord + sideMin, this.xCoord + mainMin + pixel, maxY, this.zCoord + sideMax)));
+                break;
             case 3:
+                cuboids.add(new IndexedCuboid6(4, new Cuboid6(this.xCoord + mainMax - pixel, minY, this.zCoord + sideMin, this.xCoord + mainMax, maxY, this.zCoord + sideMax)));
+                break;
             case 4:
-
-                minX = this.xCoord + sideMin;
-                maxX = this.xCoord + sideMax;
-                minZ = this.zCoord + mainMax - halfPixel;
-                maxZ = this.zCoord + 1;
-                cuboids.add(new IndexedCuboid6(4, new Cuboid6(this.xCoord + sideMin, minY, this.zCoord + mainMax - pixel, this.xCoord + sideMax, maxY, this.zCoord + 1)));
+                cuboids.add(new IndexedCuboid6(4, new Cuboid6(this.xCoord + sideMin, minY, this.zCoord + mainMax - pixel, this.xCoord + sideMax, maxY, this.zCoord + mainMax)));
                 break;
             case 5:
+                cuboids.add(new IndexedCuboid6(4, new Cuboid6(this.xCoord + sideMin, minY, this.zCoord + mainMin, this.xCoord + sideMax, maxY, this.zCoord + mainMin + pixel)));
+                break;
             default:
                 break;
         }
-        //cuboids.add(new IndexedCuboid6(meta, new Cuboid6(minX, minY, minZ, maxX, maxY, maxZ )));
+        cuboids.add(new IndexedCuboid6(6, new Cuboid6(this.xCoord + pixel, this.yCoord, this.zCoord + pixel, this.xCoord + 1 - pixel, this.yCoord + 1, this.zCoord + 1 - pixel)));
 
         return cuboids;
     }

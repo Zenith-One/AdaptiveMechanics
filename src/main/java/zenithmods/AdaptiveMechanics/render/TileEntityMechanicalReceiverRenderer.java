@@ -81,7 +81,7 @@ public class TileEntityMechanicalReceiverRenderer extends TileEntitySpecialRende
         Minecraft.getMinecraft().renderEngine.bindTexture(texture);
 
         // render the stationary bits
-        //this.model.render((Entity)null, 0.0F, 0.0F, -0.1F, 0.0F, 0.0F, 0.0625F);
+        this.model.render((Entity)null, 0.0F, 0.0F, -0.1F, 0.0F, 0.0F, 0.0625F);
 
         IItemGearbox itemGearbox = tileEntityMechanicalReceiver.getGearbox();
         if (itemGearbox != null){

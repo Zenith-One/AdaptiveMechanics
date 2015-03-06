@@ -92,7 +92,8 @@ public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBl
     public boolean onBlockActivated(World world, int x, int y, int z, EntityPlayer player, int side, float x1, float y1, float z1) {
         boolean isActivated = true;
         TileEntityMechanicalReceiver receiver = (TileEntityMechanicalReceiver) world.getTileEntity(x, y, z);
-        receiver.clientPrint(x1 + ", " + y1 + ", " + z1 + "; meta: " + world.getBlockMetadata(x, y, z));
+        receiver.clientPrint("meta: " + world.getBlockMetadata(x, y, z));
+        receiver.clientPrint(x1 + ", " + y1 + ", " + z1);
             if ( side == ForgeDirection.getOrientation(world.getBlockMetadata(x, y, z)).getRotation(ForgeDirection.DOWN).ordinal() &&
                     y1 < 0.88f && y1 > 0.62f ){
                 if (! receiver.getWorldObj().isRemote){
@@ -136,10 +137,24 @@ public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBl
     }
 
     @Override
-    public void setBlockBoundsBasedOnState(IBlockAccess par1iBlockAccess, int i, int j, int k) {
+    @SideOnly(Side.CLIENT)
+    public void setBlockBoundsBasedOnState(IBlockAccess iba, int x, int y, int z) {
+        Minecraft mc = Minecraft.getMinecraft();
+
+        EntityPlayer player = mc.thePlayer;
+        TileEntity te = iba.getTileEntity(x, y, z);
+
+        if (te != null && te instanceof TileEntityMechanicalReceiver){
+            TileEntityMechanicalReceiver receiver = (TileEntityMechanicalReceiver) te;
+            if (shouldUseCustomRaytrace(receiver)){
+                return;
+            }
+        }
+
+        // fallthrough default behavior
         float pixel = 1f / 16f;
         setBlockBounds(pixel , 0, pixel, 1.0F - pixel, 1.0F, 1.0F - pixel);
-        super.setBlockBoundsBasedOnState(par1iBlockAccess, i, j, k);
+        super.setBlockBoundsBasedOnState(iba, x, y, z);
     }
 
     @SideOnly(Side.CLIENT)
@@ -153,7 +168,7 @@ public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBl
             TileEntity te = event.player.worldObj.getTileEntity(x, y, z);
             if (te != null && te instanceof TileEntityMechanicalReceiver){
                 TileEntityMechanicalReceiver receiver = (TileEntityMechanicalReceiver) te;
-                if ( (receiver.hasGearbox() && equipped == null && event.player.isSneaking()) || (!receiver.hasGearbox() && equipped instanceof IItemGearbox)){
+                if (shouldUseCustomRaytrace(receiver)){
                     RayTracer.retraceBlock(event.player.worldObj, event.player, event.target.blockX, event.target.blockY, event.target.blockZ);
                 }
             }
@@ -172,20 +187,9 @@ public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBl
 
             ItemStack stack = player.getCurrentEquippedItem();
             Item item = stack == null? null : stack.getItem();
-            //receiver.clientPrint("valid tile: " + (tile != null) + "; ICustomRaytrace: " + (tile instanceof ICustomRaytrace) + "; valid player: " + (player != null) );
-            String line2 = "Receiver has gearbox: " + receiverHasGearbox;
-
-            if (!receiverHasGearbox){
-                line2 += "; holding gearbox: " + (item instanceof IItemGearbox);
-            } else {
-                line2 += "; player is sneaking: " + player.isSneaking();
-                line2 += "; player has empty hand: " + (item == null);
-            }
-
-            //receiver.clientPrint(line2);
 
 
-            if ( (!receiverHasGearbox && item instanceof IItemGearbox) || (receiverHasGearbox && player.isSneaking() && item == null) ){
+            if ( shouldUseCustomRaytrace(receiver) ){
 
                 List<IndexedCuboid6> cuboids = ((ICustomRaytrace) tile).getTraceableCuboids();
                 if (cuboids != null){
@@ -194,7 +198,15 @@ public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBl
             }
 
         }
-        System.out.println("herp");
         return super.collisionRayTrace(world, x, y, z, start, end);
+    }
+
+    private boolean shouldUseCustomRaytrace(TileEntityMechanicalReceiver receiver){
+        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+        ItemStack stack = player.getCurrentEquippedItem();
+        Item equipped = stack != null ? stack.getItem() : null;
+        boolean isRemovable = receiver.hasGearbox() && equipped == null;
+        boolean isInsertable = !(receiver.hasGearbox()) && equipped instanceof IItemGearbox;
+        return ( isRemovable || isInsertable );
     }
 }
