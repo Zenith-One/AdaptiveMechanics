@@ -38,7 +38,7 @@ public class AMItemRenderer implements IItemRenderer {
         GL11.glRotatef(180F, 0.0F, 0.0F, 1.0F);
         if (type == ItemRenderType.EQUIPPED) {
             EntityClientPlayerMP entity = (EntityClientPlayerMP) data[1];
-            GL11.glTranslatef(0.5F, 1.0F, 0.5F);
+            GL11.glTranslatef(-0.5F, -1.15f, 0.5F);
 
             model.renderAll(entity, 0.0F, 0.0F, -0.1F, 0.0F, 0.0F, 0.0625F);
 
