@@ -124,7 +124,7 @@ public class TileEntityMechanicalLifterRenderer extends TileEntitySpecialRendere
     }
 
 
-    private float getLeverArmRotation(int tick, int tickMax){
+    public static float getLeverArmRotation(int tick, int tickMax){
         // down: 18.8 deg
         // up:  -13.8 deg
         // difference = 32.6

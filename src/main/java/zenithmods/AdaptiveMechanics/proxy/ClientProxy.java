@@ -8,15 +8,10 @@ import zenithmods.AdaptiveMechanics.blocks.AMBlocks;
 import zenithmods.AdaptiveMechanics.items.AMItems;
 import zenithmods.AdaptiveMechanics.items.ItemGearboxCrankSocket;
 import zenithmods.AdaptiveMechanics.lib.Constants;
-import zenithmods.AdaptiveMechanics.render.AMItemRenderer;
-import zenithmods.AdaptiveMechanics.render.TileEntityCrankRenderer;
-import zenithmods.AdaptiveMechanics.render.TileEntityMechanicalLifterRenderer;
-import zenithmods.AdaptiveMechanics.render.TileEntityMechanicalReceiverRenderer;
-import zenithmods.AdaptiveMechanics.render.model.AMModel;
-import zenithmods.AdaptiveMechanics.render.model.ModelCrank;
-import zenithmods.AdaptiveMechanics.render.model.ModelMechanicalLifter;
-import zenithmods.AdaptiveMechanics.render.model.ModelMechanicalReceiver;
+import zenithmods.AdaptiveMechanics.render.*;
+import zenithmods.AdaptiveMechanics.render.model.*;
 import zenithmods.AdaptiveMechanics.tile.TileEntityCrank;
+import zenithmods.AdaptiveMechanics.tile.TileEntityMechanicalActuator;
 import zenithmods.AdaptiveMechanics.tile.TileEntityMechanicalLifter;
 import zenithmods.AdaptiveMechanics.tile.TileEntityMechanicalReceiver;
 
@@ -60,5 +55,14 @@ public class ClientProxy extends CommonProxy {
                 new AMItemRenderer((AMModel) ItemGearboxCrankSocket.crankSocketModel, TileEntityMechanicalReceiverRenderer.texture)
         );
 
+        ModelMechanicalActuator actuatorModel = new ModelMechanicalActuator();
+        ClientRegistry.bindTileEntitySpecialRenderer(
+                TileEntityMechanicalActuator.class,
+                new TileEntityMechanicalActuatorRenderer(actuatorModel)
+        );
+        MinecraftForgeClient.registerItemRenderer(
+                Item.getItemFromBlock(AMBlocks.mechanicalActuator),
+                new AMItemRenderer((AMModel) actuatorModel, TileEntityMechanicalActuatorRenderer.texture)
+        );
     }
 }

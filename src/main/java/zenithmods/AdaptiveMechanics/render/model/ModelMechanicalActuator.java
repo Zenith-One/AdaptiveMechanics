@@ -8,7 +8,7 @@ import net.minecraft.entity.Entity;
  * ActuatorMachine - zenith
  * Created using Tabula 4.1.1
  */
-public class ModelMechanicalActuator extends ModelBase {
+public class ModelMechanicalActuator extends ModelBase implements AMModel{
     public ModelRenderer LinkageBase;
     public ModelRenderer ActuatorArm;
     public ModelRenderer RightPanel;
@@ -30,6 +30,8 @@ public class ModelMechanicalActuator extends ModelBase {
     public ModelRenderer FrontPanelLeft;
     public ModelRenderer FrontPanelRight;
     public ModelRenderer FrontPanelTop;
+
+    private final float LINKAGE_OFFSET_Z_DEFAULT = 3.2F;
 
     public ModelMechanicalActuator() {
         this.textureWidth = 128;
@@ -61,7 +63,7 @@ public class ModelMechanicalActuator extends ModelBase {
         this.FrontLeftLeg.addBox(-2.0F, 0.0F, -2.0F, 2, 11, 2, 0.0F);
         this.setRotateAngle(FrontLeftLeg, 0.0F, 3.141592653589793F, 0.0F);
         this.LinkageBase = new ModelRenderer(this, 91, 20);
-        this.LinkageBase.setRotationPoint(0.15F, 4.1F, 3.7F);
+        this.LinkageBase.setRotationPoint(0.15F, 4.1F, LINKAGE_OFFSET_Z_DEFAULT);
         this.LinkageBase.addBox(-0.5F, 0.0F, -0.5F, 1, 4, 1, 0.0F);
         this.setRotateAngle(LinkageBase, 1.5707963267948966F, 0.0F, 0.0F);
         this.LeftPanel = new ModelRenderer(this, 31, 25);
@@ -122,17 +124,35 @@ public class ModelMechanicalActuator extends ModelBase {
         this.FrontPanel.render(f5);
         this.RearPanelInner.render(f5);
         this.FrontLeftLeg.render(f5);
-        this.LinkageBase.render(f5);
         this.LeftPanel.render(f5);
         this.BottomPanel.render(f5);
-        this.SmashingHead.render(f5);
         this.RearRightLeg.render(f5);
         this.TopPanel.render(f5);
         this.RightPanel.render(f5);
-        this.SplittingHeadRight.render(f5);
         this.FrontRightLeg.render(f5);
         this.FrontPanelLeft.render(f5);
         this.FrontPanelTop.render(f5);
+    }
+
+    public void renderLinkage(float f5){
+        this.LinkageBase.render(f5);
+    }
+
+    public void renderLinkage(float offset, float f5){
+
+        this.LinkageBase.setRotationPoint(LinkageBase.rotationPointX, LinkageBase.rotationPointY, offset);
+        renderLinkage(f5);
+        this.LinkageBase.setRotationPoint(LinkageBase.rotationPointX, LinkageBase.rotationPointY, LINKAGE_OFFSET_Z_DEFAULT);
+    }
+
+    public void renderHeads(float f5){
+        this.SmashingHead.render(f5);
+        this.SplittingHeadRight.render(f5);
+    }
+
+    @Override
+    public void renderAll(Entity entity, float f, float f1, float f2, float f3, float f4, float f5) {
+        render(entity, f, f1, f2, f3, f4, f5);
     }
 
     /**
