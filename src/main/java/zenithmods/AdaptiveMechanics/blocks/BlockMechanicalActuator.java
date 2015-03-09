@@ -29,6 +29,7 @@ import zenithmods.AdaptiveMechanics.api.tile.ICustomRaytrace;
 import zenithmods.AdaptiveMechanics.codechicken.lib.raytracer.IndexedCuboid6;
 import zenithmods.AdaptiveMechanics.codechicken.lib.raytracer.RayTracer;
 import zenithmods.AdaptiveMechanics.codechicken.lib.vec.BlockCoord;
+import zenithmods.AdaptiveMechanics.codechicken.lib.vec.Cuboid6;
 import zenithmods.AdaptiveMechanics.codechicken.lib.vec.Vector3;
 import zenithmods.AdaptiveMechanics.lib.Constants;
 import zenithmods.AdaptiveMechanics.render.AMRenderingRegister;
@@ -77,6 +78,11 @@ public class BlockMechanicalActuator extends BlockAdaptiveMachine implements IBl
     @Override
     public int getRenderType() {
         return AMRenderingRegister.mechanicalReceiverRenderID;
+    }
+
+    @Override
+    public boolean isSideSolid(IBlockAccess world, int x, int y, int z, ForgeDirection side) {
+        return side != ForgeDirection.DOWN && side != ForgeDirection.getOrientation(world.getBlockMetadata(x, y, z)).getOpposite();
     }
 
     @Override
@@ -137,9 +143,9 @@ public class BlockMechanicalActuator extends BlockAdaptiveMachine implements IBl
     }
 
     @Override
-    public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int i, int j, int k) {
-        float pixel = 1f / 16f;
-        return AxisAlignedBB.getBoundingBox(i + pixel , j, k + pixel, i + 1.0F - pixel, j + 1.0F, k + 1.0F - pixel);
+    public AxisAlignedBB getCollisionBoundingBoxFromPool(World world, int x, int y, int z) {
+        Cuboid6 c = getMainBoxCuboidWithOffset(x, y, z);
+        return AxisAlignedBB.getBoundingBox(c.min.x, c.min.y, c.min.z, c.max.x, c.max.y, c.max.z);
     }
 
     @Override
@@ -150,16 +156,16 @@ public class BlockMechanicalActuator extends BlockAdaptiveMachine implements IBl
         EntityPlayer player = mc.thePlayer;
         TileEntity te = iba.getTileEntity(x, y, z);
 
-        if (te != null && te instanceof TileEntityMechanicalReceiver){
-            TileEntityMechanicalReceiver receiver = (TileEntityMechanicalReceiver) te;
-            if (shouldUseCustomRaytrace(receiver)){
+        if (te != null && te instanceof TileEntityMechanicalActuator){
+            TileEntityMechanicalActuator actuator = (TileEntityMechanicalActuator) te;
+            if (shouldUseCustomRaytrace(actuator)){
                 return;
             }
         }
 
         // fallthrough default behavior
-        float pixel = 1f / 16f;
-        setBlockBounds(pixel , 0, pixel, 1.0F - pixel, 1.0F, 1.0F - pixel);
+        Cuboid6 c = getMainBoxCuboid();
+        setBlockBounds((float) c.min.x, (float) c.min.y, (float) c.min.z, (float) c.max.x, (float) c.max.y, (float) c.max.z);
         super.setBlockBoundsBasedOnState(iba, x, y, z);
     }
 
@@ -172,13 +178,24 @@ public class BlockMechanicalActuator extends BlockAdaptiveMachine implements IBl
             int y = event.target.blockY;
             int z = event.target.blockZ;
             TileEntity te = event.player.worldObj.getTileEntity(x, y, z);
-            if (te != null && te instanceof TileEntityMechanicalReceiver){
-                TileEntityMechanicalReceiver receiver = (TileEntityMechanicalReceiver) te;
-                if (shouldUseCustomRaytrace(receiver)){
+            if (te != null && te instanceof TileEntityMechanicalActuator){
+                TileEntityMechanicalActuator actuator = (TileEntityMechanicalActuator) te;
+                if (shouldUseCustomRaytrace(actuator)){
                     RayTracer.retraceBlock(event.player.worldObj, event.player, event.target.blockX, event.target.blockY, event.target.blockZ);
                 }
             }
         }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static Cuboid6 getMainBoxCuboid(){
+        float pixel = 1f / 16f;
+        return new Cuboid6(pixel , 5.0F * pixel, pixel, 1.0F - pixel, 1.0F, 1.0F - pixel);
+    }
+
+    public static Cuboid6 getMainBoxCuboidWithOffset(int x, int y, int z){
+        float pixel = 1f / 16f;
+        return new Cuboid6(x + pixel , y + 5.0F * pixel, z + pixel, x + 1.0F - pixel, y + 1.0F, z + 1.0F - pixel);
     }
 
     @Override
@@ -187,15 +204,15 @@ public class BlockMechanicalActuator extends BlockAdaptiveMachine implements IBl
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         Item equipped = player.getCurrentEquippedItem() != null ? player.getCurrentEquippedItem().getItem() : null;
         TileEntity tile = world.getTileEntity(x, y, z);
-        if (tile instanceof TileEntityMechanicalReceiver){
-            TileEntityMechanicalReceiver receiver = (TileEntityMechanicalReceiver) tile;
-            boolean receiverHasGearbox = receiver.getGearbox() != null;
+        if (tile instanceof TileEntityMechanicalActuator){
+            TileEntityMechanicalActuator actuator = (TileEntityMechanicalActuator) tile;
+            boolean actuatorHasSmashingHead = false; //actuator.getGearbox() != null;
 
             ItemStack stack = player.getCurrentEquippedItem();
             Item item = stack == null? null : stack.getItem();
 
 
-            if ( shouldUseCustomRaytrace(receiver) ){
+            if ( shouldUseCustomRaytrace(actuator) ){
 
                 List<IndexedCuboid6> cuboids = ((ICustomRaytrace) tile).getTraceableCuboids();
                 if (cuboids != null){
@@ -207,12 +224,14 @@ public class BlockMechanicalActuator extends BlockAdaptiveMachine implements IBl
         return super.collisionRayTrace(world, x, y, z, start, end);
     }
 
-    private boolean shouldUseCustomRaytrace(TileEntityMechanicalReceiver receiver){
+
+
+    private boolean shouldUseCustomRaytrace(TileEntityMechanicalActuator actuator){
         EntityPlayer player = Minecraft.getMinecraft().thePlayer;
         ItemStack stack = player.getCurrentEquippedItem();
         Item equipped = stack != null ? stack.getItem() : null;
-        boolean isRemovable = receiver.hasGearbox() && equipped == null;
-        boolean isInsertable = !(receiver.hasGearbox()) && equipped instanceof IItemGearbox;
-        return ( isRemovable || isInsertable );
+        boolean isRemovable = false; //actuator.hasGearbox() && equipped == null;
+        boolean isInsertable = false; //!(actuator.hasGearbox()) && equipped instanceof IItemGearbox;
+        return true;//( isRemovable || isInsertable );
     }
 }

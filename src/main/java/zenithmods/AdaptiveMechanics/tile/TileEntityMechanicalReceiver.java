@@ -13,14 +13,17 @@ import zenithmods.AdaptiveMechanics.api.item.IItemGearbox;
 import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineReceiver;
 import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineTransmitter;
 import zenithmods.AdaptiveMechanics.api.tile.ICustomRaytrace;
+import zenithmods.AdaptiveMechanics.api.tile.IMechanicalPowerReceiver;
 import zenithmods.AdaptiveMechanics.codechicken.lib.raytracer.IndexedCuboid6;
 import zenithmods.AdaptiveMechanics.codechicken.lib.vec.Cuboid6;
 import zenithmods.AdaptiveMechanics.utility.ItemHelper;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
-public class TileEntityMechanicalReceiver extends TileEntity implements IAdaptiveMachineTransmitter, IAdaptiveMachineReceiver, ICustomRaytrace {
+public class TileEntityMechanicalReceiver extends TileEntity implements IAdaptiveMachineTransmitter, IAdaptiveMachineReceiver, ICustomRaytrace, IMechanicalPowerReceiver {
 
     private int rotationTicks = 0;
     private int inputTicks = 0;
@@ -37,6 +40,11 @@ public class TileEntityMechanicalReceiver extends TileEntity implements IAdaptiv
     @Override
     public void updateEntity() {
         super.updateEntity();
+        HashSet<TileEntity> source = new HashSet<TileEntity>();
+        source.add(this);
+        if (!canAcceptPower(source)){
+            return;
+        }
         if (inputTicks > 0){
             inputTicks--;
             if (rotationPerTick > 0){
@@ -89,7 +97,6 @@ public class TileEntityMechanicalReceiver extends TileEntity implements IAdaptiv
 
         }
 
-        System.out.println(sides);
         return sides;
     }
 
@@ -133,7 +140,26 @@ public class TileEntityMechanicalReceiver extends TileEntity implements IAdaptiv
         } else {
             ticksPerRotation = ticks / amount;
         }
-        inputTicks = ticks;
+        inputTicks += ticks;
+    }
+
+    private TileEntity getTargetTileEntity(){
+        return worldObj.getTileEntity(xCoord, yCoord + 1, zCoord);
+    }
+
+    private IMechanicalPowerReceiver getTargetReceiver(){
+        TileEntity te = getTargetTileEntity();
+        return (te != null && te instanceof IMechanicalPowerReceiver) ? (IMechanicalPowerReceiver) te : null;
+    }
+
+    @Override
+    public boolean canAcceptPower(Set<TileEntity> source) {
+        if (!source.contains(this)) {
+            source.add(this);
+            IMechanicalPowerReceiver receiver = getTargetReceiver();
+            return receiver == null || receiver.canAcceptPower(source);
+        }
+        return true;
     }
 
     @Override

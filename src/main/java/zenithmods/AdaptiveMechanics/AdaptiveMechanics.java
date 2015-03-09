@@ -55,6 +55,7 @@ public class AdaptiveMechanics {
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event){
         MinecraftForge.EVENT_BUS.register(AMBlocks.mechanicalReceiver);
+        MinecraftForge.EVENT_BUS.register(AMBlocks.mechanicalActuator);
         System.out.println(Constants.MOD_NAME + " PostInitialization complete");
     }
 

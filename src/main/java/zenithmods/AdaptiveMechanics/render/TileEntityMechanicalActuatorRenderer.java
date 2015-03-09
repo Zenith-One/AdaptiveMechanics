@@ -90,9 +90,10 @@ public class TileEntityMechanicalActuatorRenderer extends TileEntitySpecialRende
 
         // (s, t) ends up at (u, v) where u = s * cos(a) + t * sin(a) and v = s * sin(a) + t * cos(a)
 
-        double r = 10.4d;
-
         if (actuator.isConnectedToLifter()) {
+            model.renderStruts(f5);
+
+
             TileEntityMechanicalLifter lifter = actuator.getInputLifter();
             float lifterRotation = TileEntityMechanicalLifterRenderer.getLeverArmRotation(lifter.getGearBarOffset(),lifter.MAX_LIFT_TIME);
             double offsetX = 9.4 * Math.cos(lifterRotation) - 9.12;
@@ -106,6 +107,13 @@ public class TileEntityMechanicalActuatorRenderer extends TileEntitySpecialRende
         } else {
             this.model.renderLinkage(f5);
         }
+
+        int maxTime = TileEntityMechanicalLifter.MAX_LIFT_TIME;
+        float liftPercentage = ((float) maxTime - (float) actuator.getLiftingTicks())/(float) maxTime;
+        float actuatorOuterOffset = liftPercentage * 8F + model.ACTUATOR_ARM_OFFSET_DEFAULT;
+        float actuatorInnerOffset = liftPercentage * 8F + model.ACTUATOR_ARM_INNER_OFFSET_DEFAULT;
+        model.renderActuatorArm(actuatorOuterOffset, actuatorInnerOffset, f5);
+
 
         GL11.glPopMatrix();
     }

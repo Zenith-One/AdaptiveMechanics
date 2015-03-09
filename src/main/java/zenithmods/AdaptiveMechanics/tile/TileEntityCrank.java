@@ -5,6 +5,11 @@ import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineReceiver;
+import zenithmods.AdaptiveMechanics.api.tile.IMechanicalPowerReceiver;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class TileEntityCrank extends TileEntity {
 
@@ -40,6 +45,18 @@ public class TileEntityCrank extends TileEntity {
         return worldObj.getTileEntity(xCoord + d.offsetX, yCoord + d.offsetY, zCoord + d.offsetZ);
     }
 
+    private IMechanicalPowerReceiver getTargetReceiver(){
+        TileEntity te = getTargetTile();
+        return (te != null && te instanceof IMechanicalPowerReceiver) ? (IMechanicalPowerReceiver) te : null;
+    }
+
+    private boolean targetCanAcceptPower(){
+        Set<TileEntity> source = new HashSet<TileEntity>();
+        source.add(this);
+        IMechanicalPowerReceiver receiver = getTargetReceiver();
+        return (receiver != null && receiver.canAcceptPower(source));
+    }
+
     private boolean sendTargetRotations(){
         TileEntity te = getTargetTile();
         if (te != null && te instanceof IAdaptiveMachineReceiver){
@@ -52,10 +69,12 @@ public class TileEntityCrank extends TileEntity {
 
 
     public void rightClicked(){
-        if (!turning){
-            turning = sendTargetRotations();
-        } else if (rotationTicks > 350){
-            turningQueued = true;
+        if (targetCanAcceptPower()){
+            if (!turning){
+                turning = sendTargetRotations();
+            } else if (rotationTicks > 350){
+                turningQueued = true;
+            }
         }
     }
 

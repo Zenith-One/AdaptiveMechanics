@@ -3,8 +3,14 @@ package zenithmods.AdaptiveMechanics.tile;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 import zenithmods.AdaptiveMechanics.api.tile.IAdaptiveMachineTransmitter;
+import zenithmods.AdaptiveMechanics.api.tile.ILifterReceiver;
+import zenithmods.AdaptiveMechanics.api.tile.IMechanicalPowerReceiver;
 
-public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveMachineTransmitter {
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveMachineTransmitter, IMechanicalPowerReceiver {
 
     public static final int MAX_EXTENDED_TICKS = 10;
     public static final int MAX_DROP_TICKS = 5;
@@ -27,6 +33,7 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
 
     private int extendedTicks = 0;
 
+    private boolean wasActive = false;
     private boolean dropping = false;
     private int dropTicks = 0;
 
@@ -77,8 +84,27 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
         return te instanceof IAdaptiveMachineTransmitter;
     }
 
+    private TileEntity getTileEntityAtTarget(){
+        int x = ForgeDirection.getOrientation(blockMetadata).offsetX + xCoord;
+        int y = ForgeDirection.getOrientation(blockMetadata).offsetY + yCoord;
+        int z = ForgeDirection.getOrientation(blockMetadata).offsetZ + zCoord;
+        return this.worldObj.getTileEntity(x, y, z);
+    }
+
+    public ILifterReceiver getReceiver(){
+        TileEntity te = getTileEntityAtTarget();
+        if (te != null && te instanceof ILifterReceiver){
+            return ((ILifterReceiver) te);
+        }
+        return null;
+    }
+
     private boolean checkProgress(){
         if (this.inputRotationTicks != this.lastInputRotation){
+            if (!wasActive && !dropping){
+                this.notifyLifterReceiver(true);
+                this.wasActive = true;
+            }
             int diff = inputRotationTicks > lastInputRotation ?
                     inputRotationTicks - lastInputRotation :
                     360+ inputRotationTicks - lastInputRotation;
@@ -91,21 +117,27 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
             this.hasReported = false;
             return diff > 0;
         } else {
-            if (!this.hasReported){
-                //this.shouldReport = true;
+            if (wasActive){
+                this.notifyLifterReceiver(false);
+                this.wasActive = false;
             }
         }
         return false;
     }
 
     private void checkGearTicks(){
-        workingTicks++;
-        if (workingTicks < EXTEND_START){
-            if (this.gearRotationTicks < 360){
-                this.gearRotationTicks++;
-                this.gearBarOffset++;
-            } else {
-                this.gearRotationTicks = 0;
+        Set<TileEntity> source = new HashSet<TileEntity>();
+        source.add(this);
+        if (this.canAcceptPower(source)){
+            workingTicks++;
+            if (workingTicks <= EXTEND_START){
+                if (this.gearRotationTicks < 360){
+                    this.gearRotationTicks++;
+                    this.gearBarOffset++;
+                    this.sendLifterTicks(1);
+                } else {
+                    this.gearRotationTicks = 0;
+                }
             }
         }
     }
@@ -116,6 +148,7 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
                this.extendedTicks++;
            } else if (workingTicks == DROP_START + 1){
                dropping = true;
+               this.notifyLifterReceiver(false);
            } else if (workingTicks > RETRACT_START){
                this.extendedTicks--;
                if (this.extendedTicks <= 0){
@@ -154,6 +187,20 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
         return dropping;
     }
 
+    private void notifyLifterReceiver(boolean state){
+        ILifterReceiver receiver = getReceiver();
+        if (receiver != null){
+            receiver.lifterStateChange(state);
+        }
+    }
+
+    private void sendLifterTicks(int ticks){
+        ILifterReceiver receiver = getReceiver();
+        if (receiver != null){
+            receiver.addLifterTicks(ticks);
+        }
+    }
+
     @Override
     public boolean[] getInputSides() {
         boolean[] sides = new boolean[6];
@@ -169,6 +216,18 @@ public class TileEntityMechanicalLifter extends TileEntity implements IAdaptiveM
         }
 
         return null;
+    }
+
+    @Override
+    public boolean canAcceptPower(Set<TileEntity> source) {
+        TileEntity te = getTileEntityAtTarget();
+        if (workingTicks < EXTEND_START && te != null && te instanceof IMechanicalPowerReceiver){
+            if (!source.contains(this)){
+                source.add(this);
+                return ((IMechanicalPowerReceiver) te).canAcceptPower(source);
+            }
+        }
+        return true;
     }
 
     public int getExtendedTicks(){

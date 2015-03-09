@@ -124,6 +124,8 @@ public class BlockMechanicalReceiver extends BlockAdaptiveMachine implements IBl
         if (receiver != null){
             if (!world.isRemote && receiver.getGearbox() != null){
                 ItemHelper.spawnEntityWithRandomMotion(world, receiver.getGearboxStack(), x, y, z);
+            } else {
+                System.out.println("nope");
             }
             world.func_147453_f(x, y, z, block);
         }
